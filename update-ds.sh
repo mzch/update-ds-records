@@ -62,7 +62,7 @@ PDNSCMD="$SUDO pdnsutil"
 function print_usage() {
   echo "Usage: "$0" [options] [DOMAIN_NAME...]"
   echo "option: -a,--all         : get domains from database. ignore DOMAIN_NAME arguments."
-  echo "        -c,--use-csk     : create CSK keys instad of KSK and ZSK combinations."
+  echo "        -c,--use-csk     : create CSK keys instad of KSK and ZSK combinations. (default)"
   echo "        -s,--separate-key: create KSK and ZSK keys."
   echo "        -z,--only-zsk    : create only ZSK keys."
   exit 1
