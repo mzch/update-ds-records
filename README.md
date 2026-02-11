@@ -1,6 +1,6 @@
 # Update DS records for Value-Domain
 
-これは、Value-Domain で管理しているドメインの DS レコードを更新するシェルスクリプトです。権威 DNS サーバーとして、PowerDNS を 使用しており、かつ、バックエンドに RDBMS 使用していることが動作条件です。
+これは、Value-Domain で管理しているドメインの DS レコードを更新するシェルスクリプトです。権威 DNS サーバーとして、PowerDNS を 使用しており、かつ、バックエンドに RDBMS を使用していることが動作条件です。
 
 #### 必要条件
 
