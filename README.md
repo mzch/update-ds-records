@@ -31,10 +31,10 @@
 
 #### 環境変数
 
-TLD_PATTERN: -a|--all を指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`com|net|jp|me` です。
-PDNS_DB_CMD: PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。
-PDNS_DB_OPT: PDNS_DB_CMD に渡すオプションを指定します。デフォルトは、`""` です。
-PDNS_DBNAME: PowerDNS のデータベース名を指定します。ディフォルトは、`powerdns` です。
+TLD_PATTERN: -a|--all を指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`com|net|jp|me` です。<br />
+PDNS_DB_CMD: PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。<br />
+PDNS_DB_OPT: PDNS_DB_CMD に渡すオプションを指定します。デフォルトは、`""` です。<br />
+PDNS_DBNAME: PowerDNS のデータベース名を指定します。ディフォルトは、`powerdns` です。<br />
 
 #### ライセンス
 
