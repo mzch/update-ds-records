@@ -37,12 +37,7 @@ only_ZSK=0
 is_JP=0
 
 if [[ -z "$TLD_PATTERN" ]] ; then
-  TLD_PATTERN='com|net|jp|me'
-fi
-
-SUDO=""
-if [[ $UID -ne 0 ]] ; then
-  SUDO="sudo"
+  TLD_PATTERN='(com|net|jp|me)'
 fi
 
 GAWK=$(which gawk)
@@ -52,6 +47,12 @@ if [[ $? -ne - ]] ; then
     echo 'Not found gawk/awk.'
     exit 1
   fi
+fi
+
+if [[ -z "$UDDS_SUDO" && $UID -ne 0 ]] ' then
+  SUDO="sudo"
+else
+  SUDO=$UDDS_SUDO
 fi
 
 PDNSCMD="$SUDO pdnsutil"
@@ -299,7 +300,7 @@ if [[ $is_From_MARIADB -ne 0 ]] ; then
     echo 'Not found Database or Tables.'
     exit 1
   fi
-  DOM_LIST=$(echo $SQL | $SUDO "$PDNS_DB_CMD" "PDNS_$DB_OPT" "$PDNS_DBNAME" | grep -E -i '^[a-z0-9]+\.('"$TLD_PATTERN"')$')
+  DOM_LIST=$(echo $SQL | $SUDO "$PDNS_DB_CMD" "PDNS_$DB_OPT" "$PDNS_DBNAME" | grep -E -i '^[a-z0-9]+\.'"$TLD_PATTERN"'$')
   if [[ -z "$DOM_LIST" ]] ; then
     echo 'Targeted domain is not found.'
     exit 1
