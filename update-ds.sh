@@ -36,21 +36,24 @@ only_ZSK=0
 
 is_JP=0
 
+DomainListFile=""
+use_LocalFile=0
+
 if [[ -z "$TLD_PATTERN" ]] ; then
   TLD_PATTERN='(com|net|jp|me)'
 fi
 
-GAWK=$(which gawk)
-if [[ $? -ne - ]] ; then
-  GAWK=$(which awk)
+GAWK=$(which gawk > /dev/null)
+if [[ $? -ne 0 ]] ; then
+  GAWK=$(which awk > /dev/null)
   if [[ $? -ne 0 ]] ; then
     echo 'Not found gawk/awk.'
     exit 1
   fi
 fi
 
-if [[ -z "$UDDS_SUDO" && $UID -ne 0 ]] ' then
-  SUDO="sudo"
+if [[ -z "$UDDS_SUDO" && $UID -ne 0 ]] ; then
+  SUDO='sudo'
 else
   SUDO=$UDDS_SUDO
 fi
@@ -64,6 +67,7 @@ function print_usage() {
   echo "Usage: "$0" [options] [DOMAIN_NAME...]"
   echo "option: -a,--all         : get domains from database. ignore DOMAIN_NAME arguments."
   echo "        -c,--use-csk     : create CSK keys instad of KSK and ZSK combinations. (default)"
+  echo "        -l,--domain-list : get domain names from a local file."
   echo "        -s,--separate-key: create KSK and ZSK keys."
   echo "        -z,--only-zsk    : create only ZSK keys."
   exit 1
@@ -74,7 +78,7 @@ function print_usage() {
 ####
 function add_zonekey()
 {
-  key=$1
+  key="$1"
   if [[ $is_JP -eq 0 ]] ; then
     $PDNSCMD $ADDKCMD "$DOMAIN" $key "active" "published" "$ALG_EC256" >> "$LOGFILE" 2>&1 || exit 1
   fi
@@ -111,7 +115,7 @@ function create_ds()
       fi
     fi
   else
-    printf "Illegal Domain name! [%s]\n" $DOMAIN 
+    printf "Illegal Domain name! [%s]\n" "$DOMAIN"
     return 1;
   fi
 
@@ -248,8 +252,9 @@ then
   exit 1
 fi
 
-short_opt_str='acsz'
-long_opt_str='all,use-csk,separate-key,only-zsk'
+short_opt_str='acl:sz'
+long_opt_str='all,use-csk,domain-list:,separate-key,only-zsk'
+
 OPTS=$(getopt -o "$short_opt_str" -l "$long_opt_str" -- "$@")
 if [[ $? -ne 0 ]] ; then
   print_usage
@@ -264,7 +269,7 @@ do
     '-a'|'--all')
       which "$PDNS_DB_CMD" > /dev/null
       if [[ $? -ne 0 ]] ; then
-        echo "$PDNS_DB_CMD"' tool is not found.'
+        echo "$PDNS_DB_CMD tool is not found."
         exit 1
       fi
       is_From_MARIADB=1
@@ -272,17 +277,25 @@ do
     '-c'|'--use-csk')
       use_CSK=1
       ;;
+    '-l'|'--domain-list')
+      shift
+      if [[ ! -f "$1" ]] ; then
+        print_help
+      fi
+      DomainListFile="$1"
+      use_LocalFile=1
+      ;;
     '-s'|'--separate-key')
       use_CSK=0
       ;;
-    '-z'|'--only-zask')
+    '-z'|'--only-zsk')
       only_ZSK=1
       ;;
     '--')
       shift
       break
       ;;
-    '*')
+    *)
       print_usage
       ;;
   esac
@@ -290,30 +303,36 @@ do
 done
 
 if [[ $only_ZSK -ne 0 && $use_CSK -ne 0 ]] ; then
-  echo "You need to use both -s and -z at a time." 
+  echo "You cannot use both -s and -z at a time." 
+  print_usage
+fi
+
+if [[ $is_From_MARIADB -ne 0 && $use_LocalFile -ne 0 ]] ; then
+  echo "You cannot use both -a and -l at a time."
   print_usage
 fi
 
 if [[ $is_From_MARIADB -ne 0 ]] ; then
   echo 'show tables;' | $SUDO "$PDNS_DB_CMD" "$PDNS_DB_OPT" "$PDNS_DBNAME" > /dev/null 2>&1
   if [[ $? -ne 0 ]] ; then
-    echo 'Not found Database or Tables.'
+    echo "Not found Database or Tables."
     exit 1
   fi
-  DOM_LIST=$(echo $SQL | $SUDO "$PDNS_DB_CMD" "PDNS_$DB_OPT" "$PDNS_DBNAME" | grep -E -i '^[a-z0-9]+\.'"$TLD_PATTERN"'$')
+  DOM_LIST=$(echo $SQL | $SUDO "$PDNS_DB_CMD" "PDNS_$DB_OPT" "$PDNS_DBNAME" | grep -E -i '^[a-z0-9]+\.'$TLD_PATTERN'$')
   if [[ -z "$DOM_LIST" ]] ; then
-    echo 'Targeted domain is not found.'
+    echo "Targeted domain is not found."
     exit 1
   fi
-elif [[ $# < 1 ]] ; then
-  print_usage
-else
+elif [[ -n "$DomainListFile" && $use_LocalFile -ne 0 ]] ; then
+  DOM_LIST=$(grep -E -i '^[a-z0-9]+\.'$TLD_PATTERN'$' "$DomainListFile")
+elif [[ $# > 0 ]] ; then
   DOM_LIST="$@"
+else
+  print_usage
 fi
 
-if [[ ! -d "$TMPDIR" ]]
-then
-  mkdir "$TMPDIR"
+if [[ ! -d "$TMPDIR" ]] ; then
+  mkdir -p "$TMPDIR"
 fi
 
 for dom in $DOM_LIST
