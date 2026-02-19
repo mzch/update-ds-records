@@ -8,7 +8,9 @@
 1. MariaDB  - https://mariadb.com/ または、その他の RDBMS (MariaDB でのみ動作検証をしています)
 1. Bash - https://www.gnu.org/software/bash/
 1. Gawk - https://www.gnu.org/software/gawk/ (BSD awk でも動作するかどうかは検証していません)
-1. curl - https://curl.se/
+1. Grep - https://www.gnu.org/software/grep/
+1. Curl - https://curl.se/ または、
+1. Wget - https://www.gnu.org/software/wget/ のいずれか。
 
 #### 事前設定
 
@@ -20,20 +22,23 @@
 
 #### 使用方法
 
-`update-ds.sh [オプション] [ドメイン名...]`<br />
-`   オプション一覧`<br />
-`   -a,--all         :` RDBMS からドメイン名の一覧を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。<br />
-`   -c,--use-csk     :` KSK と ZSK の代わりに、CSK を生成します。(ディフォルトです)<br />
-`   -s,--separate-key:` CSK ではなく、KSK と ZSK をそれぞれ生成します。<br />
-`   -z,--only-zsk    :` ZSK だけを更新します。`-s,--separate-key` も合わせて指定しなくてはなりません。<br />
+```bash
+update-ds.sh [オプション] [ドメイン名...]
+   オプション一覧
+   -a,--all         : RDBMS からドメイン名の一覧を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。
+   -c,--use-csk     : KSK と ZSK の代わりに、CSK を生成します。(ディフォルトです)
+   -l,--domain-list : ドメインをリストしたテキストファイルから DS レコードを設定するドメイン名を取得します。
+   -s,--separate-key: CSK ではなく、KSK と ZSK をそれぞれ生成します。
+   -z,--only-zsk    : ZSK だけを更新します。`-s,--separate-key` も合わせて指定しなくてはなりません。
+```
 
 #### 環境変数
 
-`TLD_PATTERN: `-a|--all を指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com|net|jp|me)` です。<br />
-`UDDS_SUDO` : コマンド実行時に使用する `sudo` または `doas` コマンドをオプションを含めて指定します。ディフォルトは、`sudo` です。<br />
-`PDNS_DB_CMD: PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。<br />
-`PDNS_DB_OPT: `PDNS_DB_CMD` で指定されたコマンドに渡すオプションを指定します。デフォルトは、`""` です。<br />
-`PDNS_DBNAME: PowerDNS のデータベース名を指定します。ディフォルトは、`powerdns` です。<br />
+`TLD_PATTERN`: `-a|--all` を指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com|net|jp|me)` です。<br />
+`UDDS_SUDO`  : コマンド実行時に使用する `sudo` または `doas` コマンドをオプションを含めて指定します。ディフォルトは、`sudo` です。<br />
+`PDNS_DB_CMD`: PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。<br />
+`PDNS_DB_OPT`: `PDNS_DB_CMD` で指定されたコマンドに渡すオプションを指定します。デフォルトは、`""` です。<br />
+`PDNS_DBNAME`: PowerDNS のデータベース名を指定します。ディフォルトは、`powerdns` です。<br />
 
 #### ライセンス
 
