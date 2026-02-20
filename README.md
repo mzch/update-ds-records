@@ -20,8 +20,8 @@
 1. 許可 IP を設定します。
 1. API トークンを発行します。
 1. 取得した API トークンをホームディレクトリの `.vd-token` と名前をつけたファイルに保存します。
-1. PowerDNS の API を有効にします。(`pdns.conf` 内の `api` を `yes` に変更し、`api-key` に適切な値を設定して PoerDNS サーバーを再起動します。)
-1. PowerDNS に設定した API-Key をホームディレクトリの `.pdns-key` と名前をつけたファイルに保存します。
+1. PowerDNS の API を有効にします (`pdns.conf` 内の `api` を `yes` に変更し、`api-key` に適切な値を設定して PoerDNS サーバーを再起動します)。[USE_PDNS_API=yes|true とする場合のみ]
+1. PowerDNS に設定した API-Key をホームディレクトリの `.pdns-key` と名前をつけたファイルに保存します。[USE_PDNS_API=yes|true とする場合のみ]
 
 #### 使用方法
 
@@ -40,7 +40,10 @@ update-ds.sh [オプション] [ドメイン名...]
 
 |環境変数名|設定内容|
 | ---- | ---- |
-|`TLD_PATTERN`| `-d`,`-l`,`-v`,`--all-from-db`,`--domain-list`,`--all-from-vd` のいずれかを指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com\|net\|jp\|me)` です。|
+|`USE_PDNS_API`|`-p`,`--all-from-pdns` のどちらかを指定した場合に PowerDNS API を使用してドメイン一覧を取得するかどうかを指定します (API を使用すると、 DNSSEC を使用していないドメインは省かれます)。`"yes"`,
+`"no"`,`"true"`,`"false"` のいずれかの値を指定します。ディフォルトは、`"no"` です。|
+|`PDNS_API_ENDPOINT`|`USE_PDNS_API` に `"yes"` または `"true"` を指定した場合に呼び出す PowerDNS の API エンドポイントを指定します。ディフォルトは、`http://127.0.0.1:8081/api/v1` です。|
+|`TLD_PATTERN`| `-l`,`-p`,`-v`,`--domain-list`,`--all-from-pdns`,`--all-from-vd` のいずれかを指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com\|net\|jp\|me)` です。|
 |`NUM_VDDOMAINS`| `-v`,`--all-from-vd` のどちらかを指定した場合に取得するドメイン数の上限を指定します。ディフォルトは、`100` です。|
 |`UDDS_SUDO`  | コマンド実行時に使用する `sudo` または `doas` コマンドをオプションを含めて指定します。ディフォルトは、`sudo` です。|
 

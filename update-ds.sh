@@ -63,6 +63,20 @@ else
   SUDO=$UDDS_SUDO
 fi
 
+if [[ -z "$USE_PDNS_API" ]] ; then
+   USE_PDNS_API="no"
+fi
+case "$USE_PDNS_API" in
+  "true" )  ;;
+  "false")  ;;
+  "yes"  )  ;;
+  "no"   )  ;;
+  *)
+    echo 'USE_PDNS_API environment variable has an illegal value.'
+    exit 1
+    ;;
+esac
+
 PDNSCMD="$SUDO pdnsutil"
 
 ####
@@ -85,23 +99,30 @@ function print_usage() {
 ####
 function get_all_from_pdns()
 {
-  if [[ ! -f "$API_KEY_FILE" ]] ; then
-    echo 'PowerDNS API Key files is not found.'
-    exit 1
+  if [[ "$USE_PDNS_API" = "false" || "$USE_PDNS_API" = "no" ]] ; then
+
+    DOM_LIST=$($PDNSCMD $ALSTCMD | grep -E -i "${GREP_RE}")
+
+  else
+
+    if [[ ! -f "$API_KEY_FILE" ]] ; then
+      echo 'PowerDNS API Key files is not found.'
+      exit 1
+    fi
+
+    RESFILE=$(mktemp --tmpdir="$TMPDIR" 'pdns-response.XXXXXXXXXX')
+
+    PDNS_API_KEY=$(cat "$API_KEY_FILE")
+    AUTH_HDR="X-Api-Key: $PDNS_API_KEY"
+
+    SERVER_ID=$(curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers | jq -r '.[].id' | head -1)
+
+    curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers/$SERVER_ID/zones > $RESFILE || exit 2
+
+    DOM_LIST=$(jq -r '.[] | select(.dnssec = true)' $RESFILE | jq -r '.id' | sed 's/\.$//g' | grep -E -i "${GREP_RE}")
+
+    rm $RESFILE
   fi
-
-  RESFILE=$(mktemp --tmpdir="$TMPDIR" 'pdns-response.XXXXXXXXXX')
-
-  PDNS_API_KEY=$(cat "$API_KEY_FILE")
-  AUTH_HDR="X-Api-Key: $PDNS_API_KEY"
-
-  SERVER_ID=$(curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers | jq -r '.[].id' | head -1)
-
-  curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers/$SERVER_ID/zones > $RESFILE || exit 2
-
-  DOM_LIST=$(jq -r '.[] | select(.dnssec = true)' $RESFILE | jq -r '.id' | sed 's/\.$//g' | grep -E -i "${GREP_RE}")
-
-  rm $RESFILE
 }
 
 ####
@@ -116,7 +137,7 @@ function get_all_from_vd()
   API_TOKEN=$(cat "$VDTOKEN_FILE")
   AUTHZ_HDR="Authorization: Bearer $API_TOKEN"
 
-  CURL_CMD="curl -s -4 -X \"GET\" -H \"${AUTHZ_HDR}\" ${API_ENDPOINT}?limit="${NUM_VDDOMAINS}"\&page=1\&order=asc"
+  CURL_CMD="curl -sSL -4 -X \"GET\" -H \"${AUTHZ_HDR}\" ${API_ENDPOINT}?limit="${NUM_VDDOMAINS}"\&page=1\&order=asc"
   eval $CURL_CMD > $RESFILE 2>&1
 
   DOM_LIST=$(jq -r '.results.[].domainname' "$RESFILE" | grep -E -i "${GREP_RE}")
@@ -283,7 +304,7 @@ EVD
   AUTHZ_HDR="Authorization: Bearer $API_TOKEN"
   CTYPE_HDR="Content-Type: application/json"
 
-  CURL_CMD="curl -s -4 -X \"PUT\" -H \"$AUTHZ_HDR\" -H \"$CTYPE_HDR\" -d @${UPDATEREC} -o "$RESFILE" -w '%{http_code}\n' ${API_ENDPOINT}"
+  CURL_CMD="curl -sSL -4 -X \"PUT\" -H \"$AUTHZ_HDR\" -H \"$CTYPE_HDR\" -d @${UPDATEREC} -o "$RESFILE" -w '%{http_code}\n' ${API_ENDPOINT}"
 
   # eval $CURL_CMD || exit 2
   STATUS=$(eval "$CURL_CMD") || exit 2
