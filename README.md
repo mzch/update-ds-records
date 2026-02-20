@@ -16,7 +16,7 @@
 
 #### 事前設定
 
-1. [Value-Domain](value-domain.com) にログインします。
+1. [Value-Domain](https://www.value-domain.com/) にログインします。
 1. マイページへ移動し、API 設定を選択します。
 1. 許可 IP を設定します。
 1. API トークンを発行します。
