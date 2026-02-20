@@ -2,15 +2,16 @@
 
 これは、Value-Domain で管理しているドメインの DS レコードを更新するシェルスクリプトです。権威 DNS サーバーとして、PowerDNS を 使用しており、かつ、バックエンドに RDBMS を使用していることが動作条件です。
 
-#### 必要条件
+#### 必要なシステム・コマンド
 
-1. PowerDNS - https://www.powerdns.com/
-1. MariaDB  - https://mariadb.com/ または、その他の RDBMS (MariaDB でのみ動作検証をしています)
-1. Bash - https://www.gnu.org/software/bash/
-1. Gawk - https://www.gnu.org/software/gawk/ (BSD awk でも動作するかどうかは検証していません)
-1. Grep - https://www.gnu.org/software/grep/
-1. Curl - https://curl.se/ または、
-1. Wget - https://www.gnu.org/software/wget/ のいずれか。
+| ---- | ---- |
+| `PowerDNS` | https://www.powerdns.com/ |
+| `RDBMS` | https://mariadb.com/ または、その他の RDBMS (MariaDB でのみ動作検証をしています) |
+| `Bash` | https://www.gnu.org/software/bash/ |
+| `Gawk` | https://www.gnu.org/software/gawk/ (BSD awk でも動作するかどうかは検証していません) |
+| `GNU Grep` | https://www.gnu.org/software/grep/ |
+| `jq` | https://jqlang.org/ |
+| `Curl`/`Wget` | https://curl.se/ または、https://www.gnu.org/software/wget/ のいずれか。|
 
 #### 事前設定
 
@@ -25,18 +26,20 @@
 ```bash
 update-ds.sh [オプション] [ドメイン名...]
    オプション一覧
-   -a,--all         : RDBMS からドメイン名の一覧を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。
-   -c,--use-csk     : KSK と ZSK の代わりに、CSK を生成します。(ディフォルトです)
-   -l,--domain-list : ドメインをリストしたテキストファイルから DS レコードを設定するドメイン名を取得します。
-   -s,--separate-key: CSK ではなく、KSK と ZSK をそれぞれ生成します。
-   -z,--only-zsk    : ZSK だけを更新します。`-s,--separate-key` も合わせて指定しなくてはなりません。
+   -c,--use-csk     :` KSK と ZSK の代わりに、CSK を生成します。(ディフォルトです)
+   -s,--separate-key:` CSK ではなく、KSK と ZSK をそれぞれ生成します。
+   -z,--only-zsk    :` ZSK だけを更新します。`-s,--separate-key` も合わせて指定しなくてはなりません。
+   -d,--all-from-db :` RDBMS からドメイン名の一覧を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。
+   -l,--domain-list :` このオプションに続けて指定したファイルからドメイン名を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。
+   -v,--all-from-vd :` Value-Domain からドメイン名の一覧を取得して、そのすべてに DS レコードを設定します。引数にドメイン名を指定しても無視されます。
 ```
 
 #### 環境変数
 
 |環境変数名|設定内容|
 | ---- | ---- |
-|`TLD_PATTERN`| `-a,--all` あるいは、`-l,--domain-list` を指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com\|net\|jp\|me)` です。|
+|`TLD_PATTERN`| `-d`,`-l`,`-v`,`--all-from-db`,`--domain-list`,`--all-from-vd` のいずれかを指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`(com|net|jp|me)` です。|
+|`NUM_VDDOMAINS`| `-v`,`--all-from-vd` のどちらかを指定した場合に取得するドメイン数の上限を指定します。ディフォルトは、`100` です。|
 |`UDDS_SUDO`  | コマンド実行時に使用する `sudo` または `doas` コマンドをオプションを含めて指定します。ディフォルトは、`sudo` です。|
 |`PDNS_DB_CMD`| PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。|
 |`PDNS_DB_OPT`| `PDNS_DB_CMD` で指定されたコマンドに渡すオプションを指定します。デフォルトは、`""` です。|
