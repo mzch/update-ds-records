@@ -11,7 +11,7 @@
 | `Gawk` | https://www.gnu.org/software/gawk/ (BSD awk でも動作するかどうかは検証していません) |
 | `GNU Grep` | https://www.gnu.org/software/grep/ |
 | `jq` | https://jqlang.org/ |
-| `Curl`/`Wget` | https://curl.se/ または、https://www.gnu.org/software/wget/ のいずれか。|
+| `Curl` | https://curl.se/ |
 
 #### 事前設定
 
