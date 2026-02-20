@@ -1,13 +1,5 @@
 #! /usr/bin/env bash
 
-if [[ -z "$PDNS_DB_CMD" ]] ; then
-  PDNS_DB_CMD="mariadb"
-  PDNS_DB_OPT=""
-fi
-if [[ -z "$PDNS_DBNAME" ]] ; then
-  PDNS_DBNAME="powerdns"
-fi
-
 TMPDIR="$HOME/tmp/update-ds"
 KEYLIST="$TMPDIR/pdns_key.list"
 ZONEINFO="$TMPDIR/zone-info.txt"
@@ -24,11 +16,10 @@ LISTCMD="zone list-keys"
 DELTCMD="zone remove-key"
 ADDKCMD="zone add-key"
 
-TOKEN_FILE="$HOME/.vd-token"
+VDTOKEN_FILE="$HOME/.vd-token"
+API_KEY_FILE="$HOME/.pdns-key"
 
-SQL="select name from domains;"
-
-is_From_MARIADB=0
+is_From_PowerDNS=0
 is_From_VD=0
 
 use_CSK=1
@@ -40,9 +31,15 @@ is_JP=0
 DomainListFile=""
 use_LocalFile=0
 
+if [[ -z "$PDNS_API_ENDPOINT" ]] ; then
+  PDNS_API_ENDPOINT="http://127.0.0.1:8081/api/v1"
+fi
+
 if [[ -z "$TLD_PATTERN" ]] ; then
   TLD_PATTERN='(com|net|jp|me)'
 fi
+
+GREP_RE='^[a-z0-9]+\.'$TLD_PATTERN'$'
 
 if [[ -z "$NUM_VDDOMAINS" ]] ; then
   NUM_VDDOMAINS=100
@@ -73,31 +70,38 @@ PDNSCMD="$SUDO pdnsutil"
 ####
 function print_usage() {
   echo "Usage: "$0" [options] [DOMAIN_NAME...]"
-  echo "options -c,--use-csk     : create CSK keys instad of KSK and ZSK combinations. (default)"
-  echo "        -s,--separate-key: create KSK and ZSK keys."
-  echo "        -z,--only-zsk    : create only ZSK keys."
-  echo "        -d,--all-from-db : get domain names from RDBMS. ignore DOMAIN_NAME arguments."
-  echo "        -l,--domain-list : get domain names from a local file. ignore DOMAIN_NAME arguments."
-  echo "        -v,--all-from-vd : get domain names from Value-Domain. ignore DOMAIN_NAME arguments."
+  echo "options -c,--use-csk      : create CSK keys instad of KSK and ZSK combinations. (default)"
+  echo "        -s,--separate-key : create KSK and ZSK keys."
+  echo "        -z,--only-zsk     : create only ZSK keys."
+  echo "        -l,--domain-list  : get domain names from a local file. ignore DOMAIN_NAME arguments."
+  echo "        -p,--all-from-pdns: get domain names from PowerDNS. ignore DOMAIN_NAME arguments."
+  echo "        -v,--all-from-vd  : get domain names from Value-Domain. ignore DOMAIN_NAME arguments."
   exit 1
 }
 
 
 ####
-#### Get all targeted domain name from Value-Domain
+#### Get all targeted domain name from PowerDNS
 ####
-function get_all_from_db()
+function get_all_from_pdns()
 {
-  echo 'show tables;' | $SUDO "$PDNS_DB_CMD" "$PDNS_DB_OPT" "$PDNS_DBNAME" > /dev/null 2>&1
-  if [[ $? -ne 0 ]] ; then
-    echo "Not found Database or Tables."
+  if [[ ! -f "$API_KEY_FILE" ]] ; then
+    echo 'PowerDNS API Key files is not found.'
     exit 1
   fi
-  DOM_LIST=$(echo $SQL | $SUDO "$PDNS_DB_CMD" "PDNS_$DB_OPT" "$PDNS_DBNAME" | grep -E -i '^[a-z0-9]+\.'$TLD_PATTERN'$')
-  if [[ -z "$DOM_LIST" ]] ; then
-    echo "Targeted domain is not found."
-    exit 1
-  fi
+
+  RESFILE=$(mktemp --tmpdir="$TMPDIR" 'pdns-response.XXXXXXXXXX')
+
+  PDNS_API_KEY=$(cat "$API_KEY_FILE")
+  AUTH_HDR="X-Api-Key: $PDNS_API_KEY"
+
+  SERVER_ID=$(curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers | jq -r '.[].id' | head -1)
+
+  curl -sSL -X "GET" -H "$AUTH_HDR" $PDNS_API_ENDPOINT/servers/$SERVER_ID/zones > $RESFILE || exit 2
+
+  DOM_LIST=$(jq -r '.[] | select(.dnssec = true)' $RESFILE | jq -r '.id' | sed 's/\.$//g' | grep -E -i "${GREP_RE}")
+
+  rm $RESFILE
 }
 
 ####
@@ -109,13 +113,13 @@ function get_all_from_vd()
 
   API_ENDPOINT="https://api.value-domain.com/v1/domains"
 
-  API_TOKEN=$(cat "$TOKEN_FILE")
+  API_TOKEN=$(cat "$VDTOKEN_FILE")
   AUTHZ_HDR="Authorization: Bearer $API_TOKEN"
 
   CURL_CMD="curl -s -4 -X \"GET\" -H \"${AUTHZ_HDR}\" ${API_ENDPOINT}?limit="${NUM_VDDOMAINS}"\&page=1\&order=asc"
   eval $CURL_CMD > $RESFILE 2>&1
 
-  DOM_LIST=$(jq -r '.results.[].domainname' "$RESFILE" | grep -E -i '^[a-z0-9]+\.'$TLD_PATTERN'$')
+  DOM_LIST=$(jq -r '.results.[].domainname' "$RESFILE" | grep -E -i "${GREP_RE}")
 
   rm $RESFILE
 }
@@ -275,7 +279,7 @@ EVD
 
   API_ENDPOINT="https://api.value-domain.com/v1/domains/$DOMAIN/dnssec"
 
-  API_TOKEN=$(cat "$TOKEN_FILE")
+  API_TOKEN=$(cat "$VDTOKEN_FILE")
   AUTHZ_HDR="Authorization: Bearer $API_TOKEN"
   CTYPE_HDR="Content-Type: application/json"
 
@@ -293,20 +297,14 @@ EVD
 #### Main ####
 ####
 
-if [[ ! -f "$TOKEN_FILE" ]]
+if [[ ! -f "$VDTOKEN_FILE" ]]
 then
   echo "API Token file is not found!"
   exit 1
 fi
 
-which "$PDNS_DB_CMD" > /dev/null
-if [[ $? -ne 0 ]] ; then
-  echo "$PDNS_DB_CMD command is not found."
-  exit 1
-fi
-
-short_opt_str='dcl:svz'
-long_opt_str='use-csk,all-from-db.domain-list:,separate-key,all-from-vd,only-zsk'
+short_opt_str='cl:psvz'
+long_opt_str='use-csk,domain-list:,all-from-pdns,separate-key,all-from-vd,only-zsk'
 
 OPTS=$(getopt -o "$short_opt_str" -l "$long_opt_str" -- "$@")
 if [[ $? -ne 0 ]] ; then
@@ -328,8 +326,8 @@ do
     '-z'|'--only-zsk')
       only_ZSK=1
       ;;
-    '-d'|'--all-from-db')
-      is_From_MARIADB=1
+    '-p'|'--all-from-pdns')
+      is_From_PowerDNS=1
       ;;
     '-l'|'--domain-list')
       shift
@@ -358,7 +356,7 @@ if [[ $only_ZSK -ne 0 && $use_CSK -ne 0 ]] ; then
   print_usage
 fi
 
-if [[ $is_From_MARIADB -ne 0 && $use_LocalFile -ne 0 ]] ; then
+if [[ $is_From_PowerDNS -ne 0 && $use_LocalFile -ne 0 ]] ; then
   echo "You cannot use both -a and -l at a time."
   print_usage
 fi
@@ -366,24 +364,27 @@ if [[ $is_From_VD -ne 0 && $use_LocalFile -ne 0 ]] ; then
   echo "You cannot use both -l and -v at a time."
   print_usage
 fi
-if [[ $is_From_VD -ne 0 && $is_From_MARIADB -ne 0 ]] ; then
+if [[ $is_From_VD -ne 0 && $is_From_PowerDNS -ne 0 ]] ; then
   echo "You cannot use both -a and -v at a time."
   print_usage
 fi
 
 DOM_LIST=""
 
-if [[ $is_From_MARIADB -ne 0 ]] ; then
-  get_all_from_db
+if [[ $is_From_PowerDNS -ne 0 ]] ; then
+  get_all_from_pdns
 elif [[ $is_From_VD -ne 0 ]] ; then
   get_all_from_vd
 elif [[ -n "$DomainListFile" && $use_LocalFile -ne 0 ]] ; then
-  DOM_LIST=$(grep -E -i '^[a-z0-9]+\.'$TLD_PATTERN'$' "$DomainListFile")
+  DOM_LIST=$(grep -E -i "${GREP_RE}" "$DomainListFile")
 elif [[ $# > 0 ]] ; then
   DOM_LIST="$@"
 else
   print_usage
 fi
+
+echo $DOM_LIST
+exit 0
 
 if [[ ! -d "$TMPDIR" ]] ; then
   mkdir -p "$TMPDIR"
