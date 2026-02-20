@@ -4,6 +4,7 @@
 
 #### 必要なシステム・コマンド
 
+|システム／コマンド名|備考|
 | ---- | ---- |
 | `PowerDNS` | https://www.powerdns.com/ |
 | `RDBMS` | https://mariadb.com/ または、その他の RDBMS (MariaDB でのみ動作検証をしています) |
