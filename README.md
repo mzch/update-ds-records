@@ -20,7 +20,7 @@
 1. 許可 IP を設定します。
 1. API トークンを発行します。
 1. 取得した API トークンをホームディレクトリの `.vd-token` と名前をつけたファイルに保存します。
-1. PowerDNS の API を有効にします。(`pdns,conf` で `api` の値を `yes` に変更し、`api-key` に適切な値を設定して PoerDNS サーバーを再起動します。)
+1. PowerDNS の API を有効にします。(`pdns.conf` 内の `api` を `yes` に変更し、`api-key` に適切な値を設定して PoerDNS サーバーを再起動します。)
 1. PowerDNS に設定した API-Key をホームディレクトリの `.pdns-key` と名前をつけたファイルに保存します。
 
 #### 使用方法
