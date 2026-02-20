@@ -39,7 +39,7 @@ update-ds.sh [オプション] [ドメイン名...]
 
 |環境変数名|設定内容|
 | ---- | ---- |
-|`TLD_PATTERN`| `-d`,`-l`,`-v`,`--all-from-db`,`--domain-list`,`--all-from-vd` のいずれかを指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`\(com|net|jp|me\)` です。|
+|`TLD_PATTERN`| `-d`,`-l`,`-v`,`--all-from-db`,`--domain-list`,`--all-from-vd` のいずれかを指定した場合に DS レコードを生成対象とする TLD のパターンを指定します。ディフォルトは、`\(com\|net\|jp\|me\)` です。|
 |`NUM_VDDOMAINS`| `-v`,`--all-from-vd` のどちらかを指定した場合に取得するドメイン数の上限を指定します。ディフォルトは、`100` です。|
 |`UDDS_SUDO`  | コマンド実行時に使用する `sudo` または `doas` コマンドをオプションを含めて指定します。ディフォルトは、`sudo` です。|
 |`PDNS_DB_CMD`| PowerDNS のバックエンドデータベースのアクセスコマンドを指定します。ディフォルトは、`mariadb` です。|
