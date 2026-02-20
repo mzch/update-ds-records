@@ -404,9 +404,6 @@ else
   print_usage
 fi
 
-echo $DOM_LIST
-exit 0
-
 if [[ ! -d "$TMPDIR" ]] ; then
   mkdir -p "$TMPDIR"
 fi
