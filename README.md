@@ -1,6 +1,6 @@
 # Update DS records for Value-Domain
 
-これは、Value-Domain で管理しているドメインの DS レコードを更新するシェルスクリプトです。権威 DNS サーバーとして、PowerDNS を 使用しており、かつ、バックエンドに RDBMS を使用していることが動作条件です。
+これは、[Value-Domain](https://www.value-domain/) で管理しているドメインの DS レコードを更新するシェルスクリプトです。権威 DNS サーバーとして、[PowerDNS]( https://www.powerdns.com/) を 使用しており、かつ、バックエンドに RDBMS を使用していることが動作条件です。
 
 #### 必要なシステム・コマンド
 
@@ -16,7 +16,7 @@
 
 #### 事前設定
 
-1. value-domain.com にログインします。
+1. [Value-Domain](value-domain.com) にログインします。
 1. マイページへ移動し、API 設定を選択します。
 1. 許可 IP を設定します。
 1. API トークンを発行します。
